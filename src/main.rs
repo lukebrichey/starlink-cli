@@ -9,6 +9,12 @@ fn main() {
     let opt: Opt = Opt::from_args();
     let rt = tokio::runtime::Runtime::new().unwrap();
 
+    // If speed flag passed, we create a stream
+    if opt.speed {
+        rt.block_on(cli::print_speeds());
+        return;
+    }
+
     let res = rt.block_on(make_request());
 
     println!("Received gRPC response from Dish, parsing...");

@@ -10,9 +10,7 @@ termion = "1.5"
 starlink = { git = "https://github.com/ewilken/starlink-rs.git" }
 tonic = "0.8"
 tokio = { version = "1.5", features = ["rt-multi-thread"] }  # tokio moved here
+async-stream = "0.3"
 
 [build-dependencies]
 tonic-build = "0.8"
-
-[dev-dependencies]
-async-stream = "0.3"
