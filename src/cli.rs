@@ -17,16 +17,17 @@ pub struct Opt {
     #[structopt(short, long)]
     pub alerts: bool,
 
-    /// Returns the state of dish
-    #[structopt(long)]
-    pub state: bool,
+    /// Returns whether dish is currently obstructed and obstruction %
+    #[structopt(short, long)]
+    pub obstruction: bool,
 
     /// Returns download and upload speed in mbps
     #[structopt(short, long)]
     pub speed: bool,
 
-    #[structopt(short, long)]
-    pub obstruction: bool,
+    /// Returns the state of dish
+    #[structopt(long)]
+    pub state: bool,
 }
 
 pub fn print_alerts(get_status_res: &Response) {
@@ -42,25 +43,21 @@ pub fn print_alerts(get_status_res: &Response) {
     }
 }
 
-// Prints device uptime
-pub fn print_state(get_status_res: &Response) {
+// Prints obstruction percentage, colors based on advice from
+// https://www.starlinkhardware.com/starlink-obstructions-how-much-is-too-much/
+pub fn print_obstruction(get_status_res: &Response) {
     if let Some(response::Response::DishGetStatus(response)) = &get_status_res.response {
-        if let Some(device_state) = &response.device_state {
-            match device_state.uptime_s {
-                Some(uptime) => {
-                    let uptime = uptime as u64;
-
-                    let months = uptime / (30 * 24 * 60 * 60);
-                    let weeks = (uptime % (30 * 24 * 60 * 60)) / (7 * 24 * 60 * 60);
-                    let days = (uptime % (7 * 24 * 60 * 60)) / (24 * 60 * 60);
-                    let seconds = uptime % (24 * 60 * 60);
-
-                    println!(
-                        "Uptime: {} months, {} weeks, {} days, {} seconds",
-                        months, weeks, days, seconds
-                    );
+        if let Some(obstructions_stats) = &response.obstruction_stats {
+            print_colored(
+                "Currently obstructed",
+                &obstructions_stats.currently_obstructed,
+            );
+            match &obstructions_stats.fraction_obstructed {
+                Some(percentage) => {
+                    print!("Percentage obstructed: ");
+                    print_color_percentage(percentage * 100.0)
                 }
-                None => println!("Uptime (s): {}", 0.0),
+                None => print_colored::<f32>("Percentage obstructed: ", &None),
             }
         }
     }
@@ -108,21 +105,25 @@ pub async fn print_speeds() {
     );
 }
 
-// Prints obstruction percentage, colors based on advice from
-// https://www.starlinkhardware.com/starlink-obstructions-how-much-is-too-much/
-pub fn print_obstruction(get_status_res: &Response) {
+// Prints device uptime
+pub fn print_state(get_status_res: &Response) {
     if let Some(response::Response::DishGetStatus(response)) = &get_status_res.response {
-        if let Some(obstructions_stats) = &response.obstruction_stats {
-            print_colored(
-                "Currently obstructed",
-                &obstructions_stats.currently_obstructed,
-            );
-            match &obstructions_stats.fraction_obstructed {
-                Some(percentage) => {
-                    print!("Percentage obstructed: ");
-                    print_color_percentage(percentage * 100.0)
+        if let Some(device_state) = &response.device_state {
+            match device_state.uptime_s {
+                Some(uptime) => {
+                    let uptime = uptime as u64;
+
+                    let months = uptime / (30 * 24 * 60 * 60);
+                    let weeks = (uptime % (30 * 24 * 60 * 60)) / (7 * 24 * 60 * 60);
+                    let days = (uptime % (7 * 24 * 60 * 60)) / (24 * 60 * 60);
+                    let seconds = uptime % (24 * 60 * 60);
+
+                    println!(
+                        "Uptime: {} months, {} weeks, {} days, {} seconds",
+                        months, weeks, days, seconds
+                    );
                 }
-                None => print_colored::<f32>("Percentage obstructed: ", &None),
+                None => println!("Uptime (s): {}", 0.0),
             }
         }
     }
