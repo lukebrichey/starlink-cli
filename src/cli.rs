@@ -17,6 +17,10 @@ pub struct Opt {
     #[structopt(short, long)]
     pub alerts: bool,
 
+    /// Returns the dish's device info (id, hardware/software versions, and country code)
+    #[structopt(short, long)]
+    pub info: bool,
+
     /// Returns whether dish is currently obstructed and obstruction %
     #[structopt(short, long)]
     pub obstruction: bool,
@@ -39,6 +43,26 @@ pub fn print_alerts(get_status_res: &Response) {
             print_colored("mast_not_near_vertical: ", &alerts.mast_not_near_vertical);
             print_colored("unexpected_location: ", &alerts.unexpected_location);
             print_colored("slow_ethernet_speeds: ", &alerts.slow_ethernet_speeds);
+        }
+    }
+}
+
+// Prints device info (id, hardware/software versions, and country code)
+pub fn print_info(get_status_res: &Response) {
+    if let Some(response::Response::DishGetStatus(r)) = &get_status_res.response {
+        if let Some(device_info) = &r.device_info {
+            if let Some(id) = &device_info.id {
+                println!("Device id: {}", id)
+            }
+            if let Some(hardware_version) = &device_info.hardware_version {
+                println!("Hardware version: {}", hardware_version)
+            }
+            if let Some(software_version) = &device_info.software_version {
+                println!("Software version: {}", software_version)                
+            }
+            if let Some(country_code) = &device_info.country_code {
+                println!("Country code: {}", country_code)
+            }
         }
     }
 }

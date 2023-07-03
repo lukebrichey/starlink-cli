@@ -18,8 +18,6 @@ fn main() {
 
     let res = rt.block_on(make_request());
 
-    println!("Received gRPC response from Dish, parsing...");
-
     // Handle errors
     if res.is_err() {
         println!("Error: {:?}", res.err());
@@ -35,5 +33,7 @@ fn main() {
         cli::print_obstruction(&get_status_res);
     } else if opt.state {
         cli::print_state(&get_status_res);
+    } else if opt.info {
+        cli::print_info(&get_status_res);
     }
 }
