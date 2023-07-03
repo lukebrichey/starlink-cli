@@ -4,6 +4,7 @@ use tokio::time::Duration;
 use structopt::StructOpt;
 use termion::color;
 use crate::dish::calculate_average_speed;
+use crate::helpers::{print_colored, print_color_percentage};
 use starlink::proto::space_x::api::device::{response, Response};
 
 #[derive(StructOpt, Debug)]
@@ -20,24 +21,9 @@ pub struct Opt {
     /// Returns download and upload speed in mbps
     #[structopt(short, long)]
     pub speed: bool,
-}
 
-pub fn print_colored<T: std::fmt::Debug>(msg: &str, value: &Option<T>) {
-    match value {
-        Some(v) => println!(
-            "{}: {}{:?}{}", 
-            msg,
-            color::Fg(color::Red), 
-            v,
-            color::Fg(color::Reset)
-        ),
-        None => println!(
-            "{}: {}None{}",
-            msg,
-            color::Fg(color::Green),
-            color::Fg(color::Reset)
-        ),
-    }    
+    #[structopt(short, long)]
+    pub obstruction: bool,
 }
 
 pub fn print_alerts(get_status_res: &Response) {
@@ -53,6 +39,7 @@ pub fn print_alerts(get_status_res: &Response) {
     }
 }
 
+// Calculates average speed by throwing out outliers, and then averaging the rest
 pub async fn print_speeds() {
     let (tx, rx) = oneshot::channel();
     let mut rx = rx; // make rx mutable
@@ -84,3 +71,19 @@ pub async fn print_speeds() {
     println!("Average upload speed: {}{:.2}{} Mbps", color::Fg(color::Green), avg_up, color::Fg(color::Reset));
 }
 
+// Prints obstruction percentage, colors based on advice from 
+// https://www.starlinkhardware.com/starlink-obstructions-how-much-is-too-much/
+pub fn print_obstruction(get_status_res: &Response) {
+    if let Some(response::Response::DishGetStatus(response)) = &get_status_res.response {
+        if let Some(obstructions_stats) = &response.obstruction_stats {
+            print_colored("Currently obstructed", &obstructions_stats.currently_obstructed);
+            match &obstructions_stats.fraction_obstructed {
+                Some(percentage) => { 
+                    print!("Percentage obstructed: "); 
+                    print_color_percentage(percentage * 100.0)
+                },
+                None => print_colored::<f32>("Percentage obstructed: ", &None)
+            }
+        }
+    }
+}

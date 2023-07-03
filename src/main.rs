@@ -1,5 +1,6 @@
 mod dish;
 mod cli;
+mod helpers;
 
 use structopt::StructOpt;
 use dish::make_request;
@@ -30,5 +31,7 @@ fn main() {
 
     if opt.alerts {
         cli::print_alerts(&get_status_res);
+    } else if opt.obstruction {
+        cli::print_obstruction(&get_status_res);
     }
 }
