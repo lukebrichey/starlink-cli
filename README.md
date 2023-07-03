@@ -1,6 +1,7 @@
 # Starlink CLI
 
-A command line interface (CLI) tool to interact with your Starlink dish. This tool allows you to get device info, obstruction stats, device state, and speeds, as well as device alerts.
+A command line interface (CLI) tool to interact with your Starlink dish. This tool allows you to get device info, obstruction stats, device state, and speeds, as well as device alerts. This tool 
+makes use of [starlink-rs](https://github.com/ewilken/starlink-rs).
 
 ## Installation
 
@@ -22,7 +23,9 @@ The executable will be located in target/release/starlink-cli.
 
 After building the project, you can run the tool with the following command:
 
+```bash
 ./target/release/starlink-cli [SUBCOMMAND]
+```
 
 The available subcommands are:
 
