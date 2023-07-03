@@ -1,14 +1,17 @@
+use crate::dish::calculate_average_speed;
+use crate::helpers::{print_color_percentage, print_colored};
+use starlink::proto::space_x::api::device::{response, Response};
 use std::io::{self, Write};
-use tokio::sync::oneshot;
-use tokio::time::Duration;
 use structopt::StructOpt;
 use termion::color;
-use crate::dish::calculate_average_speed;
-use crate::helpers::{print_colored, print_color_percentage};
-use starlink::proto::space_x::api::device::{response, Response};
+use tokio::sync::oneshot;
+use tokio::time::Duration;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "starlink-cli", about = "A CLI tool to interface with your Starlink dish.")]
+#[structopt(
+    name = "starlink-cli",
+    about = "A CLI tool to interface with your Starlink dish."
+)]
 pub struct Opt {
     /// Returns the alerts of dish
     #[structopt(short, long)]
@@ -35,6 +38,30 @@ pub fn print_alerts(get_status_res: &Response) {
             print_colored("mast_not_near_vertical: ", &alerts.mast_not_near_vertical);
             print_colored("unexpected_location: ", &alerts.unexpected_location);
             print_colored("slow_ethernet_speeds: ", &alerts.slow_ethernet_speeds);
+        }
+    }
+}
+
+// Prints device uptime
+pub fn print_state(get_status_res: &Response) {
+    if let Some(response::Response::DishGetStatus(response)) = &get_status_res.response {
+        if let Some(device_state) = &response.device_state {
+            match device_state.uptime_s {
+                Some(uptime) => {
+                    let uptime = uptime as u64;
+
+                    let months = uptime / (30 * 24 * 60 * 60);
+                    let weeks = (uptime % (30 * 24 * 60 * 60)) / (7 * 24 * 60 * 60);
+                    let days = (uptime % (7 * 24 * 60 * 60)) / (24 * 60 * 60);
+                    let seconds = uptime % (24 * 60 * 60);
+
+                    println!(
+                        "Uptime: {} months, {} weeks, {} days, {} seconds",
+                        months, weeks, days, seconds
+                    );
+                }
+                None => println!("Uptime (s): {}", 0.0),
+            }
         }
     }
 }
@@ -67,22 +94,35 @@ pub async fn print_speeds() {
     }
 
     let (avg_down, avg_up) = calculation_task.await.unwrap();
-    println!("\nAverage download speed: {}{:.2}{} Mbps", color::Fg(color::Green), avg_down, color::Fg(color::Reset));
-    println!("Average upload speed: {}{:.2}{} Mbps", color::Fg(color::Green), avg_up, color::Fg(color::Reset));
+    println!(
+        "\nAverage download speed: {}{:.2}{} Mbps",
+        color::Fg(color::Green),
+        avg_down,
+        color::Fg(color::Reset)
+    );
+    println!(
+        "Average upload speed: {}{:.2}{} Mbps",
+        color::Fg(color::Green),
+        avg_up,
+        color::Fg(color::Reset)
+    );
 }
 
-// Prints obstruction percentage, colors based on advice from 
+// Prints obstruction percentage, colors based on advice from
 // https://www.starlinkhardware.com/starlink-obstructions-how-much-is-too-much/
 pub fn print_obstruction(get_status_res: &Response) {
     if let Some(response::Response::DishGetStatus(response)) = &get_status_res.response {
         if let Some(obstructions_stats) = &response.obstruction_stats {
-            print_colored("Currently obstructed", &obstructions_stats.currently_obstructed);
+            print_colored(
+                "Currently obstructed",
+                &obstructions_stats.currently_obstructed,
+            );
             match &obstructions_stats.fraction_obstructed {
-                Some(percentage) => { 
-                    print!("Percentage obstructed: "); 
+                Some(percentage) => {
+                    print!("Percentage obstructed: ");
                     print_color_percentage(percentage * 100.0)
-                },
-                None => print_colored::<f32>("Percentage obstructed: ", &None)
+                }
+                None => print_colored::<f32>("Percentage obstructed: ", &None),
             }
         }
     }

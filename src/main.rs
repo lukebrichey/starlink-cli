@@ -33,5 +33,7 @@ fn main() {
         cli::print_alerts(&get_status_res);
     } else if opt.obstruction {
         cli::print_obstruction(&get_status_res);
+    } else if opt.state {
+        cli::print_state(&get_status_res);
     }
 }
